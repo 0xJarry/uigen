@@ -60,7 +60,23 @@ afterEach(() => {
   cleanup();
 });
 
-test("renders chat interface with message list and input", () => {
+test("renders chat interface with empty state and input when no messages", () => {
+  render(<ChatInterface />);
+
+  expect(screen.getByText("Start a conversation to generate React components")).toBeDefined();
+  expect(screen.getByTestId("message-input")).toBeDefined();
+});
+
+test("renders chat interface with message list and input when messages exist", () => {
+  const messages = [
+    { id: "1", role: "user", content: "Hello" },
+  ];
+  
+  (useChat as any).mockReturnValue({
+    ...mockUseChat,
+    messages,
+  });
+
   render(<ChatInterface />);
 
   expect(screen.getByTestId("message-list")).toBeDefined();
@@ -138,6 +154,12 @@ test("isLoading is false when status is idle", () => {
 
 
 test("scrolls when messages change", () => {
+  // Start with messages so the MessageList component is rendered
+  (useChat as any).mockReturnValue({
+    ...mockUseChat,
+    messages: [{ id: "1", role: "user", content: "Hello" }],
+  });
+
   const { rerender } = render(<ChatInterface />);
 
   // Get initial scroll container
@@ -170,10 +192,19 @@ test("renders with correct layout classes", () => {
   expect(mainDiv.className).toContain("p-4");
   expect(mainDiv.className).toContain("overflow-hidden");
 
-  const scrollArea = screen.getByTestId("message-list").closest(".flex-1");
-  expect(scrollArea?.className).toContain("overflow-hidden");
-
   const inputWrapper = screen.getByTestId("message-input").parentElement;
   expect(inputWrapper?.className).toContain("mt-4");
   expect(inputWrapper?.className).toContain("flex-shrink-0");
+});
+
+test("renders with correct layout classes when messages exist", () => {
+  (useChat as any).mockReturnValue({
+    ...mockUseChat,
+    messages: [{ id: "1", role: "user", content: "Hello" }],
+  });
+
+  render(<ChatInterface />);
+
+  const scrollArea = screen.getByTestId("message-list").closest(".flex-1");
+  expect(scrollArea?.className).toContain("overflow-hidden");
 });

@@ -8,19 +8,29 @@ vi.mock("../MarkdownRenderer", () => ({
   MarkdownRenderer: ({ content }: { content: string }) => <div>{content}</div>,
 }));
 
+// Mock the ToolCallBadge component
+vi.mock("../ToolCallBadge", () => ({
+  ToolCallBadge: ({ toolName, toolArgs }: { toolName: string; toolArgs: any }) => {
+    // Simple mock that returns the actual behavior for testing
+    if (toolName === "str_replace_editor" && toolArgs?.command === "create" && toolArgs?.path) {
+      const fileName = toolArgs.path.split(/[/\\]/).pop();
+      return <div>📝 Creating {fileName}</div>;
+    }
+    return <div>{toolName}</div>;
+  },
+}));
+
 afterEach(() => {
   cleanup();
 });
 
-test("MessageList shows empty state when no messages", () => {
-  render(<MessageList messages={[]} />);
+test("MessageList renders empty when no messages", () => {
+  const { container } = render(<MessageList messages={[]} />);
 
-  expect(
-    screen.getByText("Start a conversation to generate React components")
-  ).toBeDefined();
-  expect(
-    screen.getByText("I can help you create buttons, forms, cards, and more")
-  ).toBeDefined();
+  // Should render the container with no messages
+  const messageContainer = container.querySelector(".space-y-6");
+  expect(messageContainer).toBeDefined();
+  expect(messageContainer?.children.length).toBe(0);
 });
 
 test("MessageList renders user messages", () => {
@@ -65,7 +75,7 @@ test("MessageList renders messages with parts", () => {
           type: "tool-invocation",
           toolInvocation: {
             toolCallId: "asdf",
-            args: {},
+            args: { command: "create", path: "components/Button.tsx" },
             toolName: "str_replace_editor",
             state: "result",
             result: "Success",
@@ -78,7 +88,7 @@ test("MessageList renders messages with parts", () => {
   render(<MessageList messages={messages} />);
 
   expect(screen.getByText("Creating your component...")).toBeDefined();
-  expect(screen.getByText("str_replace_editor")).toBeDefined();
+  expect(screen.getByText("📝 Creating Button.tsx")).toBeDefined();
 });
 
 test("MessageList shows content for assistant message with content", () => {
